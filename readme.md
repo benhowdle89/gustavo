@@ -1,8 +1,8 @@
-# Backbone View form validation
+# A form validation library for Backbone Views.
 
 ## Usage 
 
-In the 'render' function in your view:
+In the 'render' function of your view:
 
 	var validate = new app.validate({
 		el: $(this.el),
