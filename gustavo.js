@@ -74,12 +74,12 @@ Gustavo.prototype.rules = function ( selector, rules ) {
 
 	validate.email = function ( item, selector ) {
 		var pattern = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-		return ( pattern.test( item.find( selector ).val() ) ? true : false;
+		return ( pattern.test( item.find( selector ).val() ) ) ? true : false;
 	}
 
 	validate.numeric = function ( item, selector ) {
 		var pattern = /\d+/g;
-		return ( pattern.test( item.find( selector ).val() ) ? true : false;
+		return ( pattern.test( item.find( selector ).val() ) ) ? true : false;
 	}
 
 	for( key in rules ) {
