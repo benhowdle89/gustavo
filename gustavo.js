@@ -85,7 +85,7 @@ Gustavo.prototype.rules = function ( selector, rules ) {
 	for( key in rules ) {
 		// call the appropriate function to determine truthy/falsy
 		// need validation that result[ key ] exists
-		cssClass = ( validate[ key ]( self.el ) ) ? this.passedClass : this.errorClass;
+		cssClass = ( validate[ key ]( self.el, selector ) ) ? this.passedClass : this.errorClass;
 		cssClasses.push( cssClass );
 	}
 
