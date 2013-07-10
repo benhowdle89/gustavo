@@ -6,7 +6,7 @@ In the 'render' function of your view:
 		elements: {
 			'username': {
 			'selector': 'input[name="username"]',
-			'type': 'change',
+			'type': 'keyup',
 			'rules': {
 				'min': 4,
 				'max': 6
@@ -14,7 +14,7 @@ In the 'render' function of your view:
 		},
 		'password': {
 			'selector': 'input[name="password"]',
-			'type': 'change',
+			'type': 'blur',
 				'rules': {
 					'notEmpty': true
 				}
@@ -41,6 +41,10 @@ Gustavo.prototype.setup = function () {
 	for( key in self.elements ) {
 		thisElement = self.elements[ key ];
 		// Register an event listener on each element to validate against
+		//
+		// AWESOME THOUGHT... Some events we want to be throttled
+		// for example a keyup event. List what events should be throttled and then utilitize the throttle or debounce methods to control.
+		//
 		this.el.on( thisElement.type, thisElement.selector, function () {
 			self.rules( thisElement.selector, thisElement.rules );
 		});
@@ -57,14 +61,13 @@ Gustavo.prototype.rules = function ( selector, rules ) {
 			pattern;
 
 	// need some validation against rules here to be sure it's the argument we expect
-	//
+	// Once all rules are passed do we continue validation?
+	// In the event of keyup this could cause certain validations to
+	// run over and over again.
 	validate.min = function ( item, selector ) {
-		// `this` not right here
-		// `item` should now be relative to what `this` was supposed to be
 		return ( item.find( selector ).val().length > rules[ key ] ) ? true : false;
 	};
 	validate.max = function ( item, selector ) {
-		// `this` not right here
 		return ( item.find( selector ).val().length < rules[ key ] ) ? true : false;
 	};
 
