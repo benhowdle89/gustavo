@@ -24,8 +24,10 @@ In the 'render' function of your view:
  */
 var Gustavo = function ( options ) {
 	options = options || {};
-	this.elements = this.elements || options.elements;
-	this.el = this.el || options.el;
+	this.elements = options.elements;
+	this.el = options.el;
+	this.throttleTime = options.throttleTime || 750;
+	this.debounceTime = options.debounceTime || 750;
 	this.passedClass = options.passedClass || 'passed';
 	this.errorClass = options.errorClass || 'error';
 	this.setup();
@@ -34,53 +36,95 @@ var Gustavo = function ( options ) {
 Gustavo.prototype.setup = function () {
 
 	var self = this,
-			key, thisElement;
+			$el,
+			key,
+			thisElement;
 
-	// need some validation against this.el
+	if ( this.el && ( this.el.nodeType === 1 || typeof this.el === "string" ) ) {
+		self.el = $( self.el );
+	}
 
 	for( key in self.elements ) {
 		thisElement = self.elements[ key ];
-		// Register an event listener on each element to validate against
-		//
-		// AWESOME THOUGHT... Some events we want to be throttled
-		// for example a keyup event. List what events should be throttled and then utilitize the throttle or debounce methods to control.
-		//
-		this.el.on( thisElement.type, thisElement.selector, function () {
-			self.rules( thisElement.selector, thisElement.rules );
+
+		// Gustavo class helps to be sure we don't stack up events
+		if( self.el.find( thisElement.selector ).hasClass( "gustavo" ) ) {
+			return;
+		}
+
+		self.bindEvent({
+			el: self.el,
+			delegate: thisElement.selector,
+			type: thisElement.type,
+			rules: thisElement.rules
 		});
+
 	}
 };
 
-Gustavo.prototype.rules = function ( selector, rules ) {
+Gustavo.prototype.bindEvent = function ( options ) {
+	var self = this,
+			options = options || {},
+			debouncedEvents = [ 'keyup', 'keydown', 'keypress' ],
+			delay = function () { },
+			delayOptions = {},
+			delayTime = 0;
+
+	// $.inArray API supported in both jQuery and Zepto
+	// Using instead of Array.indexOf since that support
+	// only exists in IE9+
+	if ( $.inArray( options.type, debouncedEvents ) !== -1 ) {
+		delay = _.debounce;
+		delayOptions.immediate = true;
+		delayTime = self.debounceTime;
+	} else {
+		delay = _.throttle;
+		delayTime = self.throttleTime;
+	}
+
+	// Register an event listener on each element to validate against
+	// Debouncing for keyboard events
+	// Throttling for others
+	if ( options.el instanceof jQuery ) {
+		options.el
+			.find( options.delegate )
+				.addClass( "gustavo" )
+				.end()
+			// .on( options.type, options.delegate, _.throttle( function () {
+			.on( options.type, options.delegate, delay( function () {
+				self.validate( options.delegate, options.rules );
+			}, delayTime, delayOptions ) );
+	}
+
+};
+
+Gustavo.prototype.validate = function ( selector, rules ) {
 
 	var self = this,
 			cssClasses = [],
 			cssClass,
 			key,
-			validate = {},
+			validator = {},
 			pattern;
 
 	// need some validation against rules here to be sure it's the argument we expect
-	// Once all rules are passed do we continue validation?
-	// In the event of keyup this could cause certain validations to
-	// run over and over again.
-	validate.min = function ( item, selector ) {
+	validator.min = function ( item, selector ) {
 		return ( item.find( selector ).val().length > rules[ key ] ) ? true : false;
 	};
-	validate.max = function ( item, selector ) {
+	validator.max = function ( item, selector ) {
 		return ( item.find( selector ).val().length < rules[ key ] ) ? true : false;
 	};
 
-	validate.notEmpty = function ( item, selector ) {
+	validator.notEmpty = function ( item, selector ) {
 		return ( item.find( selector ).val().length > 0 ) ? true : false;
 	};
 
-	validate.email = function ( item, selector ) {
+	validator.email = function ( item, selector ) {
 		var pattern = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 		return ( pattern.test( item.find( selector ).val() ) ) ? true : false;
 	}
 
-	validate.numeric = function ( item, selector ) {
+	validator.numeric = function ( item, selector ) {
 		var pattern = /\d+/g;
 		return ( pattern.test( item.find( selector ).val() ) ) ? true : false;
 	}
@@ -88,7 +132,7 @@ Gustavo.prototype.rules = function ( selector, rules ) {
 	for( key in rules ) {
 		// call the appropriate function to determine truthy/falsy
 		// need validation that result[ key ] exists
-		cssClass = ( validate[ key ]( self.el, selector ) ) ? this.passedClass : this.errorClass;
+		cssClass = ( validator[ key ]( self.el, selector ) ) ? this.passedClass : this.errorClass;
 		cssClasses.push( cssClass );
 	}
 
